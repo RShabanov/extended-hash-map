@@ -8,10 +8,6 @@ use super::token::{
     op::OpKind
 };
 
-fn is_ignore_char(ch: char) -> bool {
-    ch.is_whitespace() || "()".contains(ch)
-}
-
 #[derive(Debug)]
 pub enum LexerErr {}
 
@@ -23,19 +19,18 @@ pub(crate) struct Lexer<'a> {
 impl<'a> Lexer<'a> {
     pub fn next(&mut self) -> Result<Token, LexerErr> {
         while let Some(&next_char) = self.current_char.peek() {
-            if is_ignore_char(next_char) {
+            if "()".contains(next_char) {
                 self.skip();
                 continue;
             }
 
             if let Some(op) = self.op_kind(next_char) {
-                return Ok(Token::Op(op))
+                return Ok(Token::Op(op));
             } else if next_char.is_ascii_digit() {
-                return Ok(Token::Literal(self.number()))
+                return Ok(Token::Literal(self.number()));
             } else {
                 self.skip_delim();
-                // self.current_char.next();
-                return Ok(Token::Delim)
+                return Ok(Token::Delim);
             }
         }
 
@@ -66,13 +61,13 @@ impl<'a> Lexer<'a> {
 
     fn skip(&mut self) {
         while let Some(_) = self.current_char
-            .next_if(|&ch| is_ignore_char(ch)) {}
+            .next_if(|&ch| "()".contains(ch)) {}
     }
 
     fn skip_delim(&mut self) {
         while let Some(_) = self.current_char
-            .next_if(|&ch| !is_ignore_char(ch)
-                            && !ch.is_ascii_digit()
+            .next_if(|&ch| ch.is_whitespace()
+                            || !ch.is_ascii_digit()
                             && !"<>=>".contains(ch)) {}
     }
 
@@ -119,11 +114,14 @@ mod tests {
                 ">0, <10",
                 "<5, >=5, >=3",
                 "<5abc>=5 &|c>=3",
-                "a>=2"
+                "a>=2",
+                ">,.2",
+                "<5 >=5 >=3",
             ],
             vec![
                 vec![
                     Token::Op(OpKind::Ge),
+                    Token::Delim,
                     Token::Literal(Literal::Integer(String::from("4")))
                 ],
                 vec![
@@ -161,6 +159,21 @@ mod tests {
                     Token::Delim,
                     Token::Op(OpKind::Ge),
                     Token::Literal(Literal::Integer(String::from("2")))
+                ],
+                vec![
+                    Token::Op(OpKind::Gt),
+                    Token::Delim,
+                    Token::Literal(Literal::Integer(String::from("2")))
+                ],
+                vec![
+                    Token::Op(OpKind::Lt),
+                    Token::Literal(Literal::Integer(String::from("5"))),
+                    Token::Delim,
+                    Token::Op(OpKind::Ge),
+                    Token::Literal(Literal::Integer(String::from("5"))),
+                    Token::Delim,
+                    Token::Op(OpKind::Ge),
+                    Token::Literal(Literal::Integer(String::from("3"))),
                 ],
             ]
         )
