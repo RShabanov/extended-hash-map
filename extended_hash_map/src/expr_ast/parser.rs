@@ -5,12 +5,17 @@ use super::{
         op::OpKind,
         literal::Literal
     },
-    node::{Tree, BinOp}
+    node::{
+        Node, 
+        Tree, 
+        BinOp
+    }
 };
 
 #[derive(Debug, PartialEq)]
 pub enum ParserErr {
     InvalidToken(String),
+    InvalidExpr,
     TokenMismatch,
     Undefined,
 } 
@@ -44,7 +49,32 @@ impl<'a> Parser<'a> {
             }
 
             tree.root.push(
-                self.bin_op()?  
+                Node::Literal(self.literal()?)
+            );
+
+            self.next_token()?;
+        }
+
+        Ok(tree)
+    }
+
+    pub fn parse_condition(&mut self, text: &'a str) -> Result<Tree, ParserErr> {
+        self.lexer.set(text);
+        self.next_token()?;
+
+        let mut tree = Tree::default();
+
+        while !self.current_token.is_eof() {
+            if self.current_token.is_delim() {
+                self.next_token()?;
+
+                if self.current_token.is_eof() {
+                    break;
+                }
+            }
+
+            tree.root.push(
+                Node::BinOp(self.bin_op()?)
             );
         }
 
@@ -58,7 +88,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn bin_op(&mut self) -> Result<(BinOp), ParserErr> {
+    fn bin_op(&mut self) -> Result<BinOp, ParserErr> {
         let mut bin_op = BinOp {
             lhs: Literal::Integer(String::new()),
             op: OpKind::Eq,
@@ -72,27 +102,23 @@ impl<'a> Parser<'a> {
 
         self.next_token()?;
 
-        match self.current_token {
-            Token::Literal(ref mut lit) => {
-                let mut temp_lit = String::new();
-                
-                match lit {
-                    Literal::Float(lit) => {
-                        std::mem::swap(&mut temp_lit, lit);
-                        bin_op.rhs = Literal::Float(temp_lit);
-                    },
-                    Literal::Integer(lit) => {
-                        std::mem::swap(&mut temp_lit, lit);
-                        bin_op.rhs = Literal::Integer(temp_lit);
-                    }
-                }
-            },
-            _ => return Err(ParserErr::TokenMismatch)
-        }
+        bin_op.rhs = self.literal()?;
 
         self.next_token()?;
 
         Ok(bin_op)
+    }
+
+    fn literal(&mut self) -> Result<Literal, ParserErr> {
+        match self.current_token {
+            Token::Literal(ref mut lit) => {
+                let mut temp_lit = Literal::Integer(String::new());
+                std::mem::swap(&mut temp_lit, lit);
+
+                Ok(temp_lit)
+            },
+            _ => return Err(ParserErr::TokenMismatch)
+        }
     }
 }
 
@@ -109,7 +135,7 @@ impl Default for Parser<'_> {
 mod tests {
     use super::*;
 
-    fn exprs_and_trees() -> (Vec<&'static str>, Vec<Tree>) {
+    fn condition_exprs_and_trees() -> (Vec<&'static str>, Vec<Tree>) {
         (
             vec![
                 "( >= 4)",
@@ -122,89 +148,117 @@ mod tests {
             ],
             vec![
                 Tree { root: vec![
-                    BinOp {
-                        lhs: Literal::Integer(String::new()),
-                        op: OpKind::Ge,
-                        rhs: Literal::Integer("4".to_string())
-                    }
+                    Node::BinOp(
+                        BinOp {
+                            lhs: Literal::Integer(String::new()),
+                            op: OpKind::Ge,
+                            rhs: Literal::Integer("4".to_string())
+                        }
+                    )
                 ]},
                 Tree { root: vec![
-                    BinOp {
-                        lhs: Literal::Integer(String::new()),
-                        op: OpKind::Lt,
-                        rhs: Literal::Float("3.5".to_string())
-                    }
+                    Node::BinOp(
+                        BinOp {
+                            lhs: Literal::Integer(String::new()),
+                            op: OpKind::Lt,
+                            rhs: Literal::Float("3.5".to_string())
+                        }
+                    )
                 ]},
                 Tree { root: vec![
-                    BinOp {
-                        lhs: Literal::Integer(String::new()),
-                        op: OpKind::Gt,
-                        rhs: Literal::Integer("0".to_string())
-                    },
-                    BinOp {
-                        lhs: Literal::Integer(String::new()),
-                        op: OpKind::Lt,
-                        rhs: Literal::Integer("10".to_string())
-                    }
+                    Node::BinOp(
+                        BinOp {
+                            lhs: Literal::Integer(String::new()),
+                            op: OpKind::Gt,
+                            rhs: Literal::Integer("0".to_string())
+                        }
+                    ),
+                    Node::BinOp(
+                        BinOp {
+                            lhs: Literal::Integer(String::new()),
+                            op: OpKind::Lt,
+                            rhs: Literal::Integer("10".to_string())
+                        }
+                    )
                 ]},
                 Tree { root: vec![
-                    BinOp {
-                        lhs: Literal::Integer(String::new()),
-                        op: OpKind::Lt,
-                        rhs: Literal::Integer("5".to_string())
-                    },
-                    BinOp {
-                        lhs: Literal::Integer(String::new()),
-                        op: OpKind::Ge,
-                        rhs: Literal::Integer("5".to_string())
-                    },
-                    BinOp {
-                        lhs: Literal::Integer(String::new()),
-                        op: OpKind::Ge,
-                        rhs: Literal::Integer("3".to_string())
-                    }
+                    Node::BinOp(
+                        BinOp {
+                            lhs: Literal::Integer(String::new()),
+                            op: OpKind::Lt,
+                            rhs: Literal::Integer("5".to_string())
+                        }
+                    ),
+                    Node::BinOp(
+                        BinOp {
+                            lhs: Literal::Integer(String::new()),
+                            op: OpKind::Ge,
+                            rhs: Literal::Integer("5".to_string())
+                        }
+                    ),
+                    Node::BinOp(
+                        BinOp {
+                            lhs: Literal::Integer(String::new()),
+                            op: OpKind::Ge,
+                            rhs: Literal::Integer("3".to_string())
+                        }
+                    )
                 ]},
                 Tree { root: vec![
-                    BinOp {
-                        lhs: Literal::Integer(String::new()),
-                        op: OpKind::Lt,
-                        rhs: Literal::Integer("5".to_string())
-                    },
-                    BinOp {
-                        lhs: Literal::Integer(String::new()),
-                        op: OpKind::Ge,
-                        rhs: Literal::Integer("5".to_string())
-                    },
-                    BinOp {
-                        lhs: Literal::Integer(String::new()),
-                        op: OpKind::Ge,
-                        rhs: Literal::Integer("3".to_string())
-                    }
+                    Node::BinOp(
+                        BinOp {
+                            lhs: Literal::Integer(String::new()),
+                            op: OpKind::Lt,
+                            rhs: Literal::Integer("5".to_string())
+                        }
+                    ),
+                    Node::BinOp(
+                        BinOp {
+                            lhs: Literal::Integer(String::new()),
+                            op: OpKind::Ge,
+                            rhs: Literal::Integer("5".to_string())
+                        }
+                    ),
+                    Node::BinOp(
+                        BinOp {
+                            lhs: Literal::Integer(String::new()),
+                            op: OpKind::Ge,
+                            rhs: Literal::Integer("3".to_string())
+                        }
+                    )
                 ]},
                 Tree { root: vec![
-                    BinOp {
-                        lhs: Literal::Integer(String::new()),
-                        op: OpKind::Ge,
-                        rhs: Literal::Integer("2".to_string())
-                    }
+                    Node::BinOp(
+                        BinOp {
+                            lhs: Literal::Integer(String::new()),
+                            op: OpKind::Ge,
+                            rhs: Literal::Integer("2".to_string())
+                        }
+                    )
                 ]},
                 Tree { root: vec![
-                    BinOp {
-                        lhs: Literal::Integer(String::new()),
-                        op: OpKind::Lt,
-                        rhs: Literal::Integer("5".to_string())
-                    },
-                    BinOp {
-                        lhs: Literal::Integer(String::new()),
-                        op: OpKind::Ge,
-                        rhs: Literal::Integer("5".to_string())
-                    },
-                    BinOp {
-                        lhs: Literal::Integer(String::new()),
-                        op: OpKind::Ge,
-                        rhs: Literal::Integer("3".to_string())
-                    }
-                ]}
+                    Node::BinOp(
+                        BinOp {
+                            lhs: Literal::Integer(String::new()),
+                            op: OpKind::Lt,
+                            rhs: Literal::Integer("5".to_string())
+                        }
+                    ),
+                    Node::BinOp(
+                        BinOp {
+                            lhs: Literal::Integer(String::new()),
+                            op: OpKind::Ge,
+                            rhs: Literal::Integer("5".to_string())
+                        }
+                    ),
+                    Node::BinOp(
+                        BinOp {
+                            lhs: Literal::Integer(String::new()),
+                            op: OpKind::Ge,
+                            rhs: Literal::Integer("3".to_string())
+                        }
+                    )
+                ]},
             ]
         )
     }
@@ -219,38 +273,41 @@ mod tests {
     }
 
     #[test]
-    fn parse() {
-        let expr = "( >= 4)";
+    fn parse_condition() {
         let mut parser = Parser::new();
-        let tree = parser.parse(expr).unwrap();
-
-        let root = vec![
-            BinOp {
-                lhs: Literal::Integer(String::new()),
-                op: OpKind::Ge,
-                rhs: Literal::Integer("4".to_string())
-            }
-        ];
-
-        assert_eq!(tree.root, root);
-
-        let mut parser = Parser::new();
-        let (exprs, trees) = exprs_and_trees();
+        let (exprs, trees) = condition_exprs_and_trees();
 
         for (expr, tree) in exprs.iter().zip(trees.iter()) {
             assert_eq!(
-                parser.parse(expr).unwrap().root,
+                parser.parse_condition(expr).unwrap().root,
                 tree.root
             );
         }
     }
 
     #[test]
+    fn parse() {
+        let mut parser = Parser::new();
+        
+        assert_eq!(
+            parser.parse("(5, 5)").unwrap().root,
+            vec![
+                Node::Literal(
+                    Literal::Integer(String::from("5"))
+                ),
+                Node::Literal(
+                    Literal::Integer(String::from("5"))
+                ),
+            ]
+        )
+    }
+
+    #[test]
     #[should_panic]
-    fn parse_invalid() {
+    fn parse_invalid_condition() {
         let mut parser = Parser::new();
 
-        match parser.parse(">,.2") {
+        match parser.parse_condition(">,.2") {
             Ok(_) => (),
             Err(_) => panic!()
         }
