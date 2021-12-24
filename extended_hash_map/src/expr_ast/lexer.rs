@@ -8,6 +8,10 @@ use super::token::{
     op::OpKind
 };
 
+fn is_ignore_char(ch: char) -> bool {
+    ch.is_whitespace() || "()".contains(ch)
+}
+
 #[derive(Debug)]
 pub enum LexerErr {}
 
@@ -19,7 +23,7 @@ pub(crate) struct Lexer<'a> {
 impl<'a> Lexer<'a> {
     pub fn next(&mut self) -> Result<Token, LexerErr> {
         while let Some(&next_char) = self.current_char.peek() {
-            if "()".contains(next_char) {
+            if is_ignore_char(next_char) {
                 self.skip();
                 continue;
             }
@@ -61,13 +65,13 @@ impl<'a> Lexer<'a> {
 
     fn skip(&mut self) {
         while let Some(_) = self.current_char
-            .next_if(|&ch| "()".contains(ch)) {}
+            .next_if(|&ch| is_ignore_char(ch)) {}
     }
 
     fn skip_delim(&mut self) {
         while let Some(_) = self.current_char
-            .next_if(|&ch| ch.is_whitespace()
-                            || !ch.is_ascii_digit()
+            .next_if(|&ch| !is_ignore_char(ch)
+                            && !ch.is_ascii_digit()
                             && !"<>=>".contains(ch)) {}
     }
 
@@ -94,6 +98,10 @@ impl<'a> Lexer<'a> {
             _ => None
         }
     }
+
+    pub fn set(&mut self, text: &'a str) {
+        self.current_char = text.chars().peekable();
+    }
 }
 
 impl<'a> From<&'a str> for Lexer<'a> {
@@ -115,13 +123,12 @@ mod tests {
                 "<5, >=5, >=3",
                 "<5abc>=5 &|c>=3",
                 "a>=2",
-                ">,.2",
+                ">,.2.5",
                 "<5 >=5 >=3",
             ],
             vec![
                 vec![
                     Token::Op(OpKind::Ge),
-                    Token::Delim,
                     Token::Literal(Literal::Integer(String::from("4")))
                 ],
                 vec![
@@ -163,15 +170,13 @@ mod tests {
                 vec![
                     Token::Op(OpKind::Gt),
                     Token::Delim,
-                    Token::Literal(Literal::Integer(String::from("2")))
+                    Token::Literal(Literal::Float(String::from("2.5")))
                 ],
                 vec![
                     Token::Op(OpKind::Lt),
                     Token::Literal(Literal::Integer(String::from("5"))),
-                    Token::Delim,
                     Token::Op(OpKind::Ge),
                     Token::Literal(Literal::Integer(String::from("5"))),
-                    Token::Delim,
                     Token::Op(OpKind::Ge),
                     Token::Literal(Literal::Integer(String::from("3"))),
                 ],
@@ -180,7 +185,7 @@ mod tests {
     }
 
     #[test]
-    fn create_from() {
+    fn from() {
         let lexer = Lexer::from(">= 4");
         let lexer_str = "Lexer { current_char: Peekable { iter: Chars(['>', '=', ' ', '4']), peeked: None } }";
 
@@ -194,11 +199,16 @@ mod tests {
         for (expr, tokens) in exprs.iter().zip(expr_tokens.iter()) {
             let mut lexer = Lexer::from(*expr);
 
-            println!("LEXER: {:?}", lexer);
-            println!("LEN: {}", tokens.len());
             for token in tokens {
                 assert_eq!(lexer.next().unwrap(), *token);
             }
         }
+    }
+
+    #[test]
+    fn set() {
+        let mut lexer = Lexer::from(">= 4");
+        lexer.set("2");
+        assert_eq!(lexer.next().unwrap(), Token::Literal(Literal::Integer(String::from("2"))));
     }
 }
