@@ -5,7 +5,7 @@
 <hr>
 
 ### ExtendedHashMap::iloc:
-```
+```rust
 use extended_hash_map::ExtendedHashMap;
 
 fn main() {
@@ -38,7 +38,7 @@ Output:
 <hr>
 
 ### ExtendedHashMap::ploc:
-```
+```rust
 use extended_hash_map::ExtendedHashMap;
 
 fn main() {
