@@ -26,3 +26,23 @@ impl Tree {
         self.root.len()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn len() {
+        let mut tree = Tree {
+            root: vec![]
+        };
+
+        assert_eq!(tree.len(), 0);
+
+        tree.root.push(
+            Node::Literal(Literal::Integer(String::new()))
+        );
+
+        assert_eq!(tree.len(), 1);
+    }
+}
