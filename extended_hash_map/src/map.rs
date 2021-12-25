@@ -23,7 +23,7 @@ use super::{
 
 #[derive(Debug)]
 pub struct ExtendedHashMap<'a, K, V> {
-    pub map: HashMap<K, V>,
+    map: HashMap<K, V>,
     pub iloc: Iloc<'a, K, V>,
 }
 
@@ -212,93 +212,5 @@ where
         };
 
         hash_map
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::ExtendedHashMap;
-    use std::collections::HashMap;
-
-    const TEST_DATA_LEN: usize = 9;
-    const TEST_DATA: [(&str, i32); TEST_DATA_LEN] = [
-        ("value1", 1),
-        ("value2", 2),
-        ("value3", 3),
-        ("1", 10),
-        ("2", 10),
-        ("3", 10),
-        ("1, 5", 100),
-        ("5, 5", 200),
-        ("10, 5", 300)
-    ];
-
-    #[test]
-    fn create() {
-        assert_eq!(
-            ExtendedHashMap::<&str, i32>::new().map, 
-            HashMap::<&str, i32>::new()
-        );
-
-        assert_eq!(
-            ExtendedHashMap::<&str, i32>::default().map, 
-            HashMap::<&str, i32>::default()
-        );
-    }
-
-    #[test]
-    fn create_from() {
-        assert_eq!(
-            ExtendedHashMap::from(TEST_DATA).map,
-            HashMap::from(TEST_DATA)
-        );
-    }
-
-    #[test]
-    fn len() {
-        assert_eq!(
-            ExtendedHashMap::from(TEST_DATA).len(),
-            TEST_DATA_LEN
-        );
-    }
-
-    #[test]
-    fn empty() {
-        let mut map = ExtendedHashMap::<&str, i32>::new();
-
-        assert_eq!(map.is_empty(), true);
-
-        map.insert("1", 1);
-
-        assert_ne!(map.is_empty(), true);
-    }
-
-    #[test]
-    fn capacity() {
-        assert_eq!(
-            ExtendedHashMap::<&str, i32>::new().capacity(),
-            0
-        );
-    }
-
-    #[test]
-    fn clear() {
-        let mut map = ExtendedHashMap::from(TEST_DATA);
-        map.clear();
-
-        assert_eq!(map.len(), 0);
-        assert_ne!(map.capacity(), 0);
-    }
-
-    #[test]
-    fn iloc() {
-        let map = ExtendedHashMap::from(TEST_DATA);
-
-        let mut sorted_test_data = TEST_DATA.clone();
-        sorted_test_data.sort_by(|a, b| a.0.cmp(b.0));
-
-        for i in 0..TEST_DATA_LEN {
-            assert_eq!(map.iloc[i], sorted_test_data[i].1);
-        }
     }
 }
