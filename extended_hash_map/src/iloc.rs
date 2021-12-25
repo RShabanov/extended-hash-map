@@ -1,17 +1,13 @@
-use std::{
-    collections::HashMap,
-    hash::Hash,
-    ops::Index
-};
+use std::{collections::HashMap, hash::Hash, ops::Index};
 
 #[derive(Debug)]
 pub struct Iloc<'a, K: 'a, V: 'a> {
-    pub(crate) map: Option<&'a HashMap<K, V>>
+    pub(crate) map: Option<&'a HashMap<K, V>>,
 }
 
 impl<'a, K, V> Index<usize> for Iloc<'a, K, V>
 where
-    K: Ord + Hash
+    K: Ord + Hash,
 {
     type Output = V;
 

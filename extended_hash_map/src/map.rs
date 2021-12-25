@@ -1,25 +1,13 @@
-use std::{
-    collections::HashMap,
-    hash::Hash,
-    ops::Index,
-    borrow::Borrow, fmt::Debug
-};
 use super::{
-    iloc::Iloc,
     expr_ast::{
+        node::{BinOp, Node, Tree},
+        token::{literal::Literal, op::OpKind},
         Parser,
-        node::{
-            Tree,
-            BinOp,
-            Node
-        },
-        token::{
-            literal::Literal,
-            op::OpKind
-        }
     },
-    iter::*
+    iloc::Iloc,
+    iter::*,
 };
+use std::{borrow::Borrow, collections::HashMap, fmt::Debug, hash::Hash, ops::Index};
 
 #[derive(Debug)]
 pub struct ExtendedHashMap<'a, K, V> {
@@ -33,9 +21,9 @@ impl<'a, K: 'a, V: 'a> ExtendedHashMap<'a, K, V> {
     }
 }
 
-impl<K, V> ExtendedHashMap<'_, K, V> 
+impl<K, V> ExtendedHashMap<'_, K, V>
 where
-    K: Eq + Hash
+    K: Eq + Hash,
 {
     #[inline]
     pub fn insert(&mut self, k: K, v: V) -> Option<V> {
@@ -65,17 +53,15 @@ where
         for node in tree.root.iter() {
             match node {
                 Node::BinOp(bin_op) => {
-                    let BinOp{lhs, op, rhs} = bin_op; 
-                    let lhs: f64 = 
-                        match lhs {
-                            Literal::Integer(s) | Literal::Float(s) => s.parse().unwrap()
-                        };
+                    let BinOp { lhs, op, rhs } = bin_op;
+                    let lhs: f64 = match lhs {
+                        Literal::Integer(s) | Literal::Float(s) => s.parse().unwrap(),
+                    };
 
-                    let rhs: f64 = 
-                        match rhs {
-                            Literal::Integer(s) | Literal::Float(s) => s.parse().unwrap()
-                        };
-                    
+                    let rhs: f64 = match rhs {
+                        Literal::Integer(s) | Literal::Float(s) => s.parse().unwrap(),
+                    };
+
                     return match op {
                         OpKind::Eq => lhs == rhs,
                         OpKind::Ne => lhs != rhs,
@@ -84,8 +70,8 @@ where
                         OpKind::Le => lhs <= rhs,
                         OpKind::Lt => lhs < rhs,
                     };
-                },
-                _ => return false
+                }
+                _ => return false,
             }
         }
         false
@@ -95,15 +81,13 @@ where
         let mut rhs = rhs;
         for i in 0..lhs.len() {
             match lhs.root[i] {
-                Node::BinOp(ref mut bin_op) => {
-                    match rhs.root[i] {
-                        Node::Literal(ref mut lit) => {
-                            std::mem::swap(&mut bin_op.lhs, lit);
-                        },
-                        _ => panic!()
+                Node::BinOp(ref mut bin_op) => match rhs.root[i] {
+                    Node::Literal(ref mut lit) => {
+                        std::mem::swap(&mut bin_op.lhs, lit);
                     }
+                    _ => panic!(),
                 },
-                _ => panic!()
+                _ => panic!(),
             }
         }
     }
@@ -111,7 +95,7 @@ where
 
 impl<K, V> ExtendedHashMap<'_, K, V>
 where
-    K: Ord
+    K: Ord,
 {
     pub fn iter(&self) -> Iter<'_, K, V> {
         Iter::from(self.map.iter())
@@ -128,31 +112,26 @@ where
 
 impl<V> ExtendedHashMap<'_, &str, V>
 where
-    V: Clone + Debug
+    V: Clone + Debug,
 {
     pub fn ploc(&self, statement: &str) -> HashMap<&str, V> {
         let mut parser = Parser::new();
         let mut new_hash_map = HashMap::new();
 
-        let mut tree = 
-            match parser.parse_condition(statement) {
-                Ok(tree) => tree,
-                Err(_) => return new_hash_map
-            };
+        let mut tree = match parser.parse_condition(statement) {
+            Ok(tree) => tree,
+            Err(_) => return new_hash_map,
+        };
 
         for (key, val) in self.iter() {
-            if key
-                .chars()
-                .any(|ch| ch.is_alphabetic()) 
-            {
+            if key.chars().any(|ch| ch.is_alphabetic()) {
                 continue;
             }
 
-            let key_tree = 
-                match parser.parse(key) {
-                    Ok(key_tree) => key_tree,
-                    Err(_) => continue
-                };
+            let key_tree = match parser.parse(key) {
+                Ok(key_tree) => key_tree,
+                Err(_) => continue,
+            };
 
             if tree.len() == key_tree.len() {
                 self.mix_trees(&mut tree, key_tree);
@@ -162,13 +141,12 @@ where
                 }
             }
         }
-        
+
         new_hash_map
     }
 }
 
-impl<K, V> Default for ExtendedHashMap<'_, K, V>
-{
+impl<K, V> Default for ExtendedHashMap<'_, K, V> {
     #[inline]
     fn default() -> Self {
         let mut hash_map = Self {
@@ -176,9 +154,8 @@ impl<K, V> Default for ExtendedHashMap<'_, K, V>
             iloc: Iloc { map: None },
         };
 
-        hash_map.iloc.map = unsafe { 
-            Some(std::ptr::NonNull::new_unchecked(&mut hash_map.map).as_ref()) 
-        };
+        hash_map.iloc.map =
+            unsafe { Some(std::ptr::NonNull::new_unchecked(&mut hash_map.map).as_ref()) };
 
         hash_map
     }
@@ -207,9 +184,8 @@ where
             iloc: Iloc { map: None },
         };
 
-        hash_map.iloc.map = unsafe { 
-            Some(std::ptr::NonNull::new_unchecked(&mut hash_map.map).as_ref()) 
-        };
+        hash_map.iloc.map =
+            unsafe { Some(std::ptr::NonNull::new_unchecked(&mut hash_map.map).as_ref()) };
 
         hash_map
     }

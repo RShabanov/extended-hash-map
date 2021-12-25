@@ -1,24 +1,21 @@
-use super::token::{
-    op::OpKind, 
-    literal::Literal
-};
+use super::token::{literal::Literal, op::OpKind};
 
 #[derive(PartialEq, Eq, Debug)]
 pub struct BinOp {
     pub lhs: Literal,
     pub op: OpKind,
-    pub rhs: Literal
+    pub rhs: Literal,
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Node {
     Literal(Literal),
-    BinOp(BinOp)
+    BinOp(BinOp),
 }
 
 #[derive(Debug, Default)]
 pub struct Tree {
-    pub root: Vec<Node>
+    pub root: Vec<Node>,
 }
 
 impl Tree {
@@ -33,15 +30,12 @@ mod tests {
 
     #[test]
     fn len() {
-        let mut tree = Tree {
-            root: vec![]
-        };
+        let mut tree = Tree { root: vec![] };
 
         assert_eq!(tree.len(), 0);
 
-        tree.root.push(
-            Node::Literal(Literal::Integer(String::new()))
-        );
+        tree.root
+            .push(Node::Literal(Literal::Integer(String::new())));
 
         assert_eq!(tree.len(), 1);
     }

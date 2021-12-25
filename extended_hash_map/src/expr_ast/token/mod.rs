@@ -1,15 +1,15 @@
 pub mod literal;
 pub mod op;
 
-use op::OpKind;
 use literal::Literal;
+use op::OpKind;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Token {
     Literal(Literal),
     Op(OpKind),
     Delim,
-    Eof
+    Eof,
 }
 
 impl Token {
@@ -24,14 +24,14 @@ impl Token {
     pub fn is_op(&self) -> bool {
         match *self {
             Token::Op(_) => true,
-            _ => false
+            _ => false,
         }
     }
 
     pub fn is_literal(&self) -> bool {
         match *self {
             Token::Literal(_) => true,
-            _ => false
+            _ => false,
         }
     }
 }

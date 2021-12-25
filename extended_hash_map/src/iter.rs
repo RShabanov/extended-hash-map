@@ -1,21 +1,18 @@
-use std::{
-    collections::hash_map as base,
-    vec
-};
+use std::{collections::hash_map as base, vec};
 
 #[derive(Debug, Clone)]
 pub struct Iter<'a, K: 'a, V: 'a> {
-    pub(crate) base: vec::IntoIter<(&'a K, &'a V)>
+    pub(crate) base: vec::IntoIter<(&'a K, &'a V)>,
 }
 
 #[derive(Debug, Clone)]
 pub struct Keys<'a, K: 'a, V: 'a> {
-    pub(crate) inner: Iter<'a, K, V>
+    pub(crate) inner: Iter<'a, K, V>,
 }
 
 #[derive(Debug, Clone)]
 pub struct Values<'a, K: 'a, V: 'a> {
-    pub(crate) inner: Iter<'a, K, V>
+    pub(crate) inner: Iter<'a, K, V>,
 }
 
 impl<'a, K, V> From<base::Iter<'a, K, V>> for Iter<'a, K, V>
@@ -26,8 +23,8 @@ where
         let mut base: Vec<(&'a K, &'a V)> = iter.collect();
         base.sort_by(|lhs, rhs| lhs.0.cmp(rhs.0));
 
-        Self { 
-            base: base.into_iter()
+        Self {
+            base: base.into_iter(),
         }
     }
 }
@@ -44,7 +41,6 @@ impl<'a, K, V> Iterator for Iter<'a, K, V> {
         self.base.size_hint()
     }
 }
-
 
 impl<'a, K, V> Iterator for Keys<'a, K, V> {
     type Item = &'a K;
