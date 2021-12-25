@@ -20,8 +20,6 @@ pub enum ParserErr {
     Undefined,
 } 
 
-// type ParserResult = Result<Node, ParserErr>;
-
 #[derive(Debug)]
 pub struct Parser<'a> {
     current_token: Token,
@@ -263,6 +261,30 @@ mod tests {
         )
     }
 
+    fn exprs_and_trees() -> (Vec<&'static str>, Vec<Tree>) {
+        (
+            vec![
+                "(5, 5)",
+                "value1"
+            ],
+            vec![
+                Tree { root: vec![
+                    Node::Literal(
+                        Literal::Integer(String::from("5"))
+                    ),
+                    Node::Literal(
+                        Literal::Integer(String::from("5"))
+                    ),
+                ]},
+                Tree { root: vec![
+                    Node::Literal(
+                        Literal::Integer(String::from("1"))
+                    ),
+                ]}
+            ]
+        )
+    }
+
     #[test]
     fn create() {
         let mut parser = Parser::new();
@@ -288,18 +310,14 @@ mod tests {
     #[test]
     fn parse() {
         let mut parser = Parser::new();
-        
-        assert_eq!(
-            parser.parse("(5, 5)").unwrap().root,
-            vec![
-                Node::Literal(
-                    Literal::Integer(String::from("5"))
-                ),
-                Node::Literal(
-                    Literal::Integer(String::from("5"))
-                ),
-            ]
-        )
+        let (exprs, trees) = exprs_and_trees();
+
+        for (expr, tree) in exprs.iter().zip(trees.iter()) {
+            assert_eq!(
+                parser.parse(expr).unwrap().root,
+                tree.root
+            );
+        }
     }
 
     #[test]
