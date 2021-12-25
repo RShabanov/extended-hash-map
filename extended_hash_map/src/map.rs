@@ -2,11 +2,10 @@ use std::{
     collections::HashMap,
     hash::Hash,
     ops::Index,
-    borrow::Borrow
+    borrow::Borrow, fmt::Debug
 };
 use super::{
     iloc::Iloc,
-    ploc::Ploc,
     expr_ast::{
         Parser,
         node::{
@@ -26,7 +25,6 @@ use super::{
 pub struct ExtendedHashMap<'a, K, V> {
     pub map: HashMap<K, V>,
     pub iloc: Iloc<'a, K, V>,
-    // pub ploc: Ploc<'a, K, V>
 }
 
 impl<'a, K: 'a, V: 'a> ExtendedHashMap<'a, K, V> {
@@ -130,7 +128,7 @@ where
 
 impl<V> ExtendedHashMap<'_, &str, V>
 where
-    V: Clone
+    V: Clone + Debug
 {
     pub fn ploc(&self, statement: &str) -> HashMap<&str, V> {
         let mut parser = Parser::new();
@@ -143,6 +141,13 @@ where
             };
 
         for (key, val) in self.iter() {
+            if key
+                .chars()
+                .any(|ch| ch.is_alphabetic()) 
+            {
+                continue;
+            }
+
             let key_tree = 
                 match parser.parse(key) {
                     Ok(key_tree) => key_tree,
@@ -157,7 +162,7 @@ where
                 }
             }
         }
-
+        
         new_hash_map
     }
 }
@@ -169,15 +174,12 @@ impl<K, V> Default for ExtendedHashMap<'_, K, V>
         let mut hash_map = Self {
             map: HashMap::<K, V>::default(),
             iloc: Iloc { map: None },
-            // ploc: Ploc::default()
         };
 
         hash_map.iloc.map = unsafe { 
             Some(std::ptr::NonNull::new_unchecked(&mut hash_map.map).as_ref()) 
         };
-        // hash_map.ploc.map = unsafe { 
-        //     Some(std::ptr::NonNull::new_unchecked(&mut hash_map.map).as_ref()) 
-        // };
+
         hash_map
     }
 }
@@ -203,15 +205,12 @@ where
         let mut hash_map = Self {
             map: HashMap::from(arr),
             iloc: Iloc { map: None },
-            // ploc: Ploc::default()
         };
 
         hash_map.iloc.map = unsafe { 
             Some(std::ptr::NonNull::new_unchecked(&mut hash_map.map).as_ref()) 
         };
-        // hash_map.ploc.map = unsafe { 
-        //     Some(std::ptr::NonNull::new_unchecked(&mut hash_map.map).as_ref()) 
-        // };
+
         hash_map
     }
 }
