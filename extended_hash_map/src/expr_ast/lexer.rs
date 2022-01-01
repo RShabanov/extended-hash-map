@@ -69,7 +69,10 @@ impl<'a> Lexer<'a> {
 
     fn op_kind(&mut self, ch: char) -> Option<OpKind> {
         match ch {
-            '=' => Some(OpKind::Eq),
+            '=' => {
+                self.current_char.next();
+                Some(OpKind::Eq)
+            },
             '>' => {
                 self.current_char.next();
                 match self.current_char.next_if_eq(&'=') {
